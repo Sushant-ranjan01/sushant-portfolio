@@ -318,6 +318,8 @@ footer{border-top:1px solid var(--border);padding:32px 0;text-align:center}
   h1.hero-name{font-size:36px;white-space:normal}
 }
 </style>
+<!-- EmailJS SDK -->
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 </head>
 <body>
 
@@ -712,17 +714,18 @@ footer{border-top:1px solid var(--border);padding:32px 0;text-align:center}
       <div class="contact-form reveal">
         <div class="form-group">
           <label class="form-label">name</label>
-          <input type="text" class="form-input" placeholder="Your name"/>
+          <input id="cf-name" type="text" class="form-input" placeholder="Your name"/>
         </div>
         <div class="form-group">
           <label class="form-label">email</label>
-          <input type="email" class="form-input" placeholder="your@email.com"/>
+          <input id="cf-email" type="email" class="form-input" placeholder="your@email.com"/>
         </div>
         <div class="form-group">
           <label class="form-label">message</label>
-          <textarea class="form-input" placeholder="What's on your mind?"></textarea>
+          <textarea id="cf-message" class="form-input" placeholder="What's on your mind?"></textarea>
         </div>
-        <button class="btn-primary" style="width:100%;justify-content:center" onclick="this.textContent='Message sent ✓';this.style.background='var(--green2)'">Send Message</button>
+        <div id="cf-status" style="font-size:13px;font-family:'JetBrains Mono',monospace;min-height:18px;color:var(--green)"></div>
+        <button id="cf-btn" class="btn-primary" style="width:100%;justify-content:center" onclick="sendContactForm()">Send Message</button>
       </div>
     </div>
   </div>
@@ -749,6 +752,54 @@ let ri=0,ci=0,deleting=false;
 const el=document.getElementById('typing-text');
 function type(){const cur=roles[ri];if(!deleting){el.textContent=cur.slice(0,++ci);if(ci===cur.length){deleting=true;setTimeout(type,1800);return}}else{el.textContent=cur.slice(0,--ci);if(ci===0){deleting=false;ri=(ri+1)%roles.length}}setTimeout(type,deleting?60:90)}
 type();
+
+// ── EmailJS ──────────────────────────────────────────────────
+// STEP 1 ▸ Replace YOUR_PUBLIC_KEY with your EmailJS Public Key
+emailjs.init('bRc-18wXq6X6-T1XQ');
+
+function sendContactForm() {
+  const name    = document.getElementById('cf-name').value.trim();
+  const email   = document.getElementById('cf-email').value.trim();
+  const message = document.getElementById('cf-message').value.trim();
+  const btn     = document.getElementById('cf-btn');
+  const status  = document.getElementById('cf-status');
+
+  if (!name || !email || !message) {
+    status.style.color = '#ff6b6b';
+    status.textContent = '⚠ Please fill in all fields.';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Sending…';
+  status.style.color = 'var(--muted)';
+  status.textContent = '';
+
+  // STEP 2 ▸ Replace YOUR_SERVICE_ID and YOUR_TEMPLATE_ID below
+  emailjs.send('service_9rql4eo', 'template_eek2cqd', {
+    from_name:    name,
+    from_email:   email,
+    message:      message,
+    to_name:      'Sushant',
+  })
+  .then(() => {
+    btn.textContent  = 'Message Sent ✓';
+    btn.style.background = 'var(--green2)';
+    status.style.color = 'var(--green)';
+    status.textContent = 'Thanks! I\'ll get back to you soon.';
+    document.getElementById('cf-name').value    = '';
+    document.getElementById('cf-email').value   = '';
+    document.getElementById('cf-message').value = '';
+  })
+  .catch((err) => {
+    btn.disabled = false;
+    btn.textContent = 'Send Message';
+    status.style.color = '#ff6b6b';
+    status.textContent = '✗ Something went wrong. Try emailing directly.';
+    console.error('EmailJS error:', err);
+  });
+}
+// ─────────────────────────────────────────────────────────────
 
 window.addEventListener('scroll',()=>{document.getElementById('navbar').classList.toggle('scrolled',window.scrollY>50)});
 
